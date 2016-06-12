@@ -1,0 +1,2 @@
+
+自定义Handler：实现TypeHandler接口或者继承BaseTypeHandler类
