@@ -89,17 +89,50 @@
         <property name="someProperty" value="100"/>
     </objectFactory>
 
+    <!-- 每个sqlsession只能有一个environments-->
     <environments default="development">
         <environment id="development">
+            <!-- 事务管理器-->
+            <!--JDBC – 这个配置就是直接使用了 JDBC 的提交和回滚设置，它依赖于从数据源得到的连接来管理事务范围。-->
+            <!--MANAGED – 这个配置几乎没做什么。它从来不提交或回滚一个连接，而是让容器来管理事务的整个生命周期（比如 JEE 应用服务器的上下文）。 默认情况下它会关闭连接，然而一些容器并不希望这样，因此需要将 closeConnection 属性设置为 false 来阻止它默认的关闭行为。-->
+            <!--NOTE如果你正在使用 Spring + MyBatis，则没有必要配置事务管理器， 因为 Spring 模块会使用自带的管理器来覆盖前面的配置。-->
+
+            <!--使用这两个接口TransactionFactory Transaction，可以自定义事务处理-->
             <transactionManager type="JDBC"/>
-            <dataSource type="POOLED">
+            <!-- 数据源-->
+            <!--
+                如果自己实现数据源的话，type就是自己实现数据源那个类
+                type="org.myproject.C3P0DataSourceFactory"
+            -->
+            <dataSource type="POOLED" >
                 <property name="driver" value="${driver}"/>
                 <property name="url" value="${url}"/>
                 <property name="username" value="${username}"/>
                 <property name="password" value="${password}"/>
+                <property name="driver.encoding" value="UTF-8" />
+                <!-- 任意时刻存在的最大连接数-->
+                <property name="poolMaximumActiveConnections" value="10" />
+                <!-- 任意时刻最大空闲连接数-->
+                <property name="poolMaximumIdleConnections" value="5" />
+                <!-- 在池中被检出的时间，默认20秒-->
+                <property name="poolMaximumCheckoutTime" value="20000" />
+                <!-- 侦测查询,-->
+                <property name="poolPingQuery" value="NO PING QUERY SET" />
+                <!-- 是否开启侦测,若开启，也必须使用一个可执行的 SQL 语句设置 poolPingQuery 属性（最好是一个非常快的 SQL）-->
+                <property name="poolPingEnabled" value="false" />
+                <!-- 配置 poolPingQuery 的使用频度。这可以被设置成匹配具体的数据库连接超时时间，来避免不必要的侦测，默认值：0（即所有连接每一时刻都被侦测 — 当然仅当 poolPingEnabled 为 true 时适用）-->
+                <property name="poolPingConnectionsNotUsedFor" value="0" />
             </dataSource>
         </environment>
     </environments>
+
+    <!-- 可以通过此配置，根据不同的数据库厂商执行不同的SQL -->
+    <!-- 在有 properties 时，DB_VENDOR databaseIdProvider 的将被设置为第一个能匹配数据库产品名称的属性键对应的值，如果没有匹配的属性将会设置为 “null”。 在这个例子中，如果 getDatabaseProductName() 返回“Oracle (DataDirect)”，databaseId 将被设置为“oracle”。-->
+    <databaseIdProvider type="DB_VENDOR">
+        <property name="SQL Server" value="sqlserver"/>
+        <property name="DB2" value="db2"/>
+        <property name="Oracle" value="oracle" />
+    </databaseIdProvider>
 
     <mappers>
         <mapper resource="mapper/UserMapper.xml"/>

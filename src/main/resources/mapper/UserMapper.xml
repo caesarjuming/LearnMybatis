@@ -11,7 +11,94 @@
 <!--短名称（比如“selectAllThings”）如果全局唯一也可以作为一个单独的引用。如果不唯一，有两个或两个以上的相同名称（比如“com.foo.selectAllThings ”和“com.bar.selectAllThings”），那么使用时就会收到错误报告说短名称是不唯一的，这种情况下就必须使用完全限定名。-->
 
 <mapper namespace="mapper.UserMapper">
+
     <select id="selectOne" resultType="user" >
       select * from user
     </select>
+
+    <!--
+        <select
+                id="selectPerson"
+                parameterType="int"
+                parameterMap="deprecated"  # 已经废弃
+                resultType="hashmap"
+                resultMap="personResultMap"
+                flushCache="false"
+                useCache="true"
+                timeout="10000"
+                fetchSize="256"
+                statementType="PREPARED"
+                resultSetType="FORWARD_ONLY">
+
+            SELECT * FROM PERSON WHERE ID = #{id}
+        </select>
+    -->
+
+
+    <!--
+        <insert
+                id="insertAuthor"
+                parameterType="domain.blog.Author"
+                flushCache="true"
+                statementType="PREPARED"  # 废弃
+                keyProperty=""  （仅对 insert 和 update 有用）唯一标记一个属性，MyBatis 会通过 getGeneratedKeys 的返回值或者通过 insert 语句的 selectKey 子元素设置它的键值，默认：unset。如果希望得到多个生成的列，也可以是逗号分隔的属性名称列表。
+                keyColumn=""    （仅对 insert 和 update 有用）通过生成的键值设置表中的列名，这个设置仅在某些数据库（像 PostgreSQL）是必须的，当主键列不是表中的第一列的时候需要设置。如果希望得到多个生成的列，也可以是逗号分隔的属性名称列表。
+                useGeneratedKeys=""       # 主键生成策略
+                timeout="20">
+
+        <update
+                id="updateAuthor"
+                parameterType="domain.blog.Author"
+                flushCache="true"
+                statementType="PREPARED"
+                timeout="20">
+
+        <delete
+                id="deleteAuthor"
+                parameterType="domain.blog.Author"
+                flushCache="true"
+                statementType="PREPARED"
+                timeout="20">
+    -->
+
+
+    <!-- useGeneratedKeys，mysql和sqlserver有主键生成的-->
+    <insert id="insertAuthor" useGeneratedKeys="true"
+            keyProperty="id">
+        insert into Author (username,password,email,bio)
+        values (#{username},#{password},#{email},#{bio})
+    </insert>
+
+    <!-- 最好不要用随机函数作为主键，可以查询Oracle的sequence -->
+    <insert id="insertAuthor">
+        <selectKey keyProperty="id" resultType="int" order="BEFORE">
+            select CAST(RANDOM()*1000000 as INTEGER) a from SYSIBM.SYSDUMMY1
+        </selectKey>
+        insert into Author
+        (id, username, password, email,bio, favourite_section)
+        values
+        (#{id}, #{username}, #{password}, #{email}, #{bio}, #{favouriteSection,jdbcType=VARCHAR})
+    </insert>
+
+    <!-- sql重用-->
+    <sql id="userColumns"> ${alias}.id,${alias}.username,${alias}.password </sql>
+
+    <select id="selectUsers" resultType="map">
+        select
+        <include refid="userColumns" >
+            <property name="alias" value="t1"/>
+        </include>,
+        <include refid="userColumns">
+            <property name="alias" value="t2"/>
+        </include>
+        from some_table t1
+        cross join some_table t2
+    </select>
+
+    <!-- 像 MyBatis 的剩余部分一样，javaType 通常可以从参数对象中来去确定，前提是只要对象不是一个 HashMap。那么 javaType 应该被确定来保证使用正确类型处理器。-->
+    <!-- #{property,javaType=int,jdbcType=NUMERIC}-->
+    <!-- NOTE 如果 null 被当作值来传递，对于所有可能为空的列，JDBC Type 是需要的。你可以自己通过阅读预处理语句的 setNull() 方法的 JavaDocs 文档来研究这种情况。-->
+
+    <!-- #{age,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler}-->
+
 </mapper>
